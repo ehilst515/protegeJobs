@@ -1,50 +1,78 @@
 function fetchRSSData(){
-    const forwardCORS = `https://ancient-fjord-92634.herokuapp.com/`
-    const RSS_URL = `http://rss.careerjet.com/rss?s=junior%20software%20developer%20engineer&l=USA&lid=55&psz=30&snl=100`;
-
+    // `forwardCORS` is a CORS proxy set up by ehilst515. See README for more info.
+    const forwardCORS = `https://ancient-fjord-92634.herokuapp.com/`;
+    const RSS_URL = `http://rss.careerjet.com/rss?s=junior%20software%20developer%20engineer&l=USA&lid=55&psz=30&snl=500`;
+    // Fetch data from RSS stream
     fetch(forwardCORS + RSS_URL)
       .then(response => response.text())
       .then(str => new window.DOMParser().parseFromString(str, "text/xml"))
       .then(data => {
+        // Select `<item>` element from XML data
         const items = data.querySelectorAll("item");
-        console.log(items[0].innerHTML);
 
         let html =``;
+        let jobIDArray = [];
+        let jobData = [];
 
         items.forEach(item =>{
+          // Select item element children
           let title = item.querySelector("title").innerHTML;
           let link = item.querySelector("link").innerHTML;
           let description = item.querySelector("description").innerHTML;
-
+          let jobID = item.querySelector("guid").innerHTML;
+          // Prevent duplicates
+          if(jobIDArray.includes(jobID)){
+            return;
+          }
+          jobIDArray.push(jobID);
+          // Filter out non-junior roles
           let t = title.toLowerCase();
           let isSenior = 
-          t.includes("sr ") || t.includes("sr. ") || t.includes("senior") || 
-          t.includes("principal ") || t.includes("lead ");
+          t.includes("sr ") || t.includes("sr. ") || t.includes("senior ") || 
+          t.includes("principal ") || t.includes("lead ")  || t.includes("manager ");
           if(isSenior){
            return;
           }
+          // Construct Job object
+          var job = new Job(title, link, description, jobID);
+          jobData.push(job);
 
-          html +=`
+          // Write to HTML document
+          // html +=`
+          // <article>
+          //   <h2><a href="${link}">${title}</a></h2>
+          //   <p>${description} </p>
+          // </article>
+          // </br>`;
+
+          
+        }) //close forEach
+
+        const json =`
+        <h2>Found ${jobData.length} jobs!</h2>
           <article>
-            <h2><a href="${link}">${title}</a></h2>
-            <p>${description} </p>
+            ${JSON.stringify(jobData)}
           </article>
           </br>`;
 
-          document.body.insertAdjacentHTML("beforeend", html);
+          document.body.insertAdjacentHTML("beforeend", json);
 
-          var job = new Job(title, link, description);
-
-          console.log(JSON.stringify(job))
-        })
       })
       .catch(e => console.log(e.message));
 }
 
-function Job(title, link, description){
+/**
+ * All params are strings pulled from RSS data.
+ * @param {string} title 
+ * @param {string} link 
+ * @param {string} description 
+ * @param {string} jobID 
+ */
+function Job(title, link, description, jobID){
   this.title = title;
   this.link = link;
   this.description = description;
+  this.jobID = jobID;
 }
 
 /**  
