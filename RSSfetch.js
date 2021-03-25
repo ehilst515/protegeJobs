@@ -32,11 +32,20 @@ function fetchRSSData(){
           </br>`;
 
           document.body.insertAdjacentHTML("beforeend", html);
+
+          var job = new Job(title, link, description);
+
+          console.log(JSON.stringify(job))
         })
       })
       .catch(e => console.log(e.message));
 }
 
+function Job(title, link, description){
+  this.title = title;
+  this.link = link;
+  this.description = description;
+}
 
 /**  
  Example:
